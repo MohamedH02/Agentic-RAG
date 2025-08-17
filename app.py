@@ -5,7 +5,6 @@ import time
 import json
 from datetime import datetime
 
-# Core imports
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.vectorstores import InMemoryVectorStore
@@ -17,7 +16,6 @@ from langgraph.graph import MessagesState, StateGraph, START, END
 from langgraph.prebuilt import ToolNode, tools_condition
 from pydantic import BaseModel, Field
 
-# Page configuration
 st.set_page_config(
     page_title="🤖 Agentic RAG System",
     page_icon="🤖",
@@ -25,7 +23,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better UI
 st.markdown("""
 <style>
     .main-header {
@@ -88,7 +85,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
 def init_session_state():
     if 'rag_system' not in st.session_state:
         st.session_state.rag_system = None
@@ -99,29 +95,27 @@ def init_session_state():
     if 'processing_steps' not in st.session_state:
         st.session_state.processing_steps = []
 
-# Document grading schema
 class GradeDocuments(BaseModel):
     """Grade documents using a binary score for relevance check."""
     binary_score: str = Field(
         description="Relevance score: 'yes' if relevant, or 'no' if not relevant"
     )
 
-# Agentic RAG System Class
 class AgenticRAGSystem:
     def __init__(self, openai_api_key: str):
         self.openai_api_key = openai_api_key
         os.environ["OPENAI_API_KEY"] = openai_api_key
         
-        # Initialize models
+    
         self.response_model = init_chat_model("gpt-4o-mini", temperature=0)
         self.grader_model = init_chat_model("gpt-4o-mini", temperature=0)
         
-        # Initialize components
+    
         self.vectorstore = None
         self.retriever_tool = None
         self.graph = None
         
-        # Prompts
+    
         self.grade_prompt = (
             "You are a grader assessing relevance of a retrieved document to a user question. \n "
             "Here is the retrieved document: \n\n {context} \n\n"
@@ -153,7 +147,6 @@ class AgenticRAGSystem:
         try:
             steps = []
             
-            # Step 1: Fetch documents
             if progress_callback:
                 progress_callback(0.2, "Fetching documents from URLs...")
             
@@ -169,7 +162,6 @@ class AgenticRAGSystem:
             if not docs:
                 raise Exception("No documents were successfully loaded")
             
-            # Step 2: Split documents
             if progress_callback:
                 progress_callback(0.4, "Splitting documents into chunks...")
             
@@ -179,7 +171,7 @@ class AgenticRAGSystem:
             doc_splits = text_splitter.split_documents(docs)
             steps.append(f"✅ Split documents into {len(doc_splits)} chunks")
             
-            # Step 3: Create vector store
+
             if progress_callback:
                 progress_callback(0.6, "Creating vector embeddings...")
             
@@ -189,7 +181,6 @@ class AgenticRAGSystem:
             retriever = self.vectorstore.as_retriever()
             steps.append("✅ Created vector store with embeddings")
             
-            # Step 4: Create retriever tool
             if progress_callback:
                 progress_callback(0.8, "Setting up retriever tool...")
             
@@ -200,7 +191,6 @@ class AgenticRAGSystem:
             )
             steps.append("✅ Created retriever tool")
             
-            # Step 5: Build graph
             if progress_callback:
                 progress_callback(0.9, "Building agentic workflow...")
             
@@ -229,13 +219,11 @@ class AgenticRAGSystem:
         """Build the agentic RAG graph"""
         workflow = StateGraph(MessagesState)
         
-        # Add nodes
         workflow.add_node("generate_query_or_respond", self.generate_query_or_respond)
         workflow.add_node("retrieve", ToolNode([self.retriever_tool]))
         workflow.add_node("rewrite_question", self.rewrite_question)
         workflow.add_node("generate_answer", self.generate_answer)
         
-        # Add edges
         workflow.add_edge(START, "generate_query_or_respond")
         
         workflow.add_conditional_edges(
@@ -304,7 +292,6 @@ class AgenticRAGSystem:
         try:
             messages = [{"role": "user", "content": question}]
             
-            # Stream through the graph
             steps = []
             final_response = None
             
@@ -327,11 +314,9 @@ class AgenticRAGSystem:
         except Exception as e:
             return {"success": False, "message": f"Error querying RAG system: {str(e)}"}
 
-# Main UI
 def main():
     init_session_state()
     
-    # Header
     st.markdown("""
     <div class="main-header">
         <h1>🤖 Agentic RAG System</h1>
@@ -339,11 +324,9 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Sidebar for configuration
     with st.sidebar:
         st.header("⚙️ Configuration")
         
-        # API Key input
         api_key = st.text_input(
             "OpenAI API Key",
             type="password",
@@ -352,7 +335,6 @@ def main():
         
         st.divider()
         
-        # Document URLs
         st.subheader("📚 Document Sources")
         
         default_urls = [
@@ -373,7 +355,6 @@ def main():
         
         st.divider()
         
-        # Process documents button
         if st.button("🔄 Initialize RAG System", type="primary"):
             if not api_key:
                 st.error("Please provide an OpenAI API key")
@@ -382,7 +363,6 @@ def main():
             else:
                 initialize_rag_system(api_key, urls)
         
-        # System status
         st.subheader("📊 System Status")
         if st.session_state.rag_system:
             st.success("✅ System Ready")
@@ -392,14 +372,11 @@ def main():
         if st.session_state.documents_processed:
             st.info(f"📄 Documents processed")
     
-    # Main content area
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        # Chat interface
         st.header("💬 Chat Interface")
         
-        # Display chat history
         for chat in st.session_state.chat_history:
             with st.chat_message("user"):
                 st.write(chat["question"])
@@ -407,22 +384,18 @@ def main():
             with st.chat_message("assistant"):
                 st.write(chat["response"])
                 
-                # Show processing steps in expander
                 if chat.get("steps"):
                     with st.expander("View Processing Steps"):
                         for step in chat["steps"]:
                             st.text(f"[{step['timestamp']}] {step['node']}")
         
-        # Chat input
         if st.session_state.rag_system:
             question = st.chat_input("Ask a question about your documents...")
             
             if question:
-                # Add user message
                 with st.chat_message("user"):
                     st.write(question)
                 
-                # Process query
                 with st.chat_message("assistant"):
                     with st.spinner("Processing your question..."):
                         result = st.session_state.rag_system.query(question)
@@ -430,7 +403,6 @@ def main():
                     if result["success"]:
                         st.write(result["response"])
                         
-                        # Store in chat history
                         st.session_state.chat_history.append({
                             "question": question,
                             "response": result["response"],
@@ -438,7 +410,6 @@ def main():
                             "timestamp": datetime.now()
                         })
                         
-                        # Show steps in expander
                         if result.get("steps"):
                             with st.expander("View Processing Steps"):
                                 for step in result["steps"]:
@@ -451,7 +422,6 @@ def main():
             st.info("👆 Please initialize the RAG system first using the sidebar")
     
     with col2:
-        # Processing steps display
         st.header("🔄 Processing Log")
         
         if st.session_state.processing_steps:
@@ -460,7 +430,6 @@ def main():
         else:
             st.info("No processing steps yet")
         
-        # Clear chat button
         if st.session_state.chat_history:
             if st.button("🗑️ Clear Chat History"):
                 st.session_state.chat_history = []
@@ -475,10 +444,8 @@ def initialize_rag_system(api_key: str, urls: List[str]):
         progress_bar.progress(progress)
         status_text.text(message)
     
-    # Create RAG system
     rag_system = AgenticRAGSystem(api_key)
     
-    # Process documents
     result = rag_system.process_documents(urls, update_progress)
     
     if result["success"]:
@@ -487,7 +454,6 @@ def initialize_rag_system(api_key: str, urls: List[str]):
         st.session_state.processing_steps = result["steps"]
         st.success(f"✅ {result['message']}")
         
-        # Show metrics
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Documents", result["num_documents"])
@@ -501,9 +467,9 @@ def initialize_rag_system(api_key: str, urls: List[str]):
         if result.get("steps"):
             st.session_state.processing_steps = result["steps"]
     
-    # Clear progress indicators
     progress_bar.empty()
     status_text.empty()
 
 if __name__ == "__main__":
+
     main()
