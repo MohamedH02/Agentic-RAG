@@ -10,7 +10,7 @@
 
 **An intelligent document retrieval and question-answering system powered by LangGraph and OpenAI**
 
-[Demo](#-demo) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Contributing](#-contributing)
+[Demo](#-demo) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage)
 
 </div>
 
@@ -249,4 +249,5 @@ MODEL = "gpt-4o-mini"    # OpenAI model to use
 
 # UI Configuration
 MAX_CHAT_HISTORY = 50     # Messages to keep in memory
+
 ```
