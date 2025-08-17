@@ -96,7 +96,7 @@ environment or goal misspecification, and reward tampering..."
 ### 1-Minute Setup
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/agentic-rag-system.git
+git clone https://github.com/MohamedH02/Agentic-RAG.git
 cd agentic-rag-system
 
 # Install dependencies
@@ -251,3 +251,4 @@ MODEL = "gpt-4o-mini"    # OpenAI model to use
 MAX_CHAT_HISTORY = 50     # Messages to keep in memory
 
 ```
+
